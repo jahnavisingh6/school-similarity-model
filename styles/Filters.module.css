@@ -185,31 +185,3 @@
   background: #e53e3e;
   color: white;
 }
-
-/* Dark mode support */
-:global(.dark) .panel {
-  background: #1e1e1e;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-:global(.dark) .toggleButton {
-  background: #2d2d2d;
-  border-color: #444;
-  color: #e0e0e0;
-}
-
-:global(.dark) .sectionTitle {
-  color: #ccc;
-}
-
-:global(.dark) .chip,
-:global(.dark) .stateChip {
-  background: #333;
-  color: #ccc;
-}
-
-:global(.dark) .rangeInput {
-  background: #2d2d2d;
-  border-color: #444;
-  color: #e0e0e0;
-}

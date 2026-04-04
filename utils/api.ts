@@ -49,7 +49,8 @@ export async function fetchSchools(): Promise<SchoolsApiResponse> {
 export async function computeSimilarity(
   profile: StudentProfile,
   weights?: FeatureWeights,
-  topN?: number
+  topN?: number,
+  goalSchoolIds?: number[]
 ): Promise<SimilarityApiResponse> {
   const response = await fetch(`${API_BASE}/similarity`, {
     method: 'POST',
@@ -59,7 +60,8 @@ export async function computeSimilarity(
     body: JSON.stringify({
       profile,
       weights,
-      topN
+      topN,
+      goalSchoolIds
     })
   });
 

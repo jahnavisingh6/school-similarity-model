@@ -10,7 +10,6 @@ A **Next.js + TypeScript** web app that recommends **similar US colleges** based
 - **Compare schools** side-by-side (up to 4)
 - **Save favorites** in-browser (localStorage)
 - **Use an in-app chatbot** that asks questions and finds matches
-- **Toggle light/dark mode**
 
 ## Tech stack
 - **Frontend**: Next.js / React / TypeScript
@@ -42,7 +41,6 @@ components/
   CompareSchools.tsx     # side-by-side comparison modal
   Chatbot.tsx            # guided Q&A (client-side similarity)
   FavoriteButton.tsx     # local favorites
-  ThemeToggle.tsx        # light/dark mode
 utils/
   similarity.ts          # Z-score + weighted cosine similarity
   api.ts                 # frontend helpers for calling API routes
@@ -120,4 +118,3 @@ python3 scripts/process_scorecard.py path/to/scorecard.csv public/data/schools.j
 - Recommendations are **similarity-based**, not an admissions prediction model.
 - Some fields can be missing in raw data; the pipeline fills defaults for stable UX.
 - `notebooks/Modeling.ipynb` is exploratory and not required to run the web app.
-

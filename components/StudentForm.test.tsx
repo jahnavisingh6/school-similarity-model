@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import StudentForm from './StudentForm';
 import { getDefaultFeatureWeights } from '../utils/validation';
-import type { FeatureWeights } from '../types';
+import type { School } from '../types';
 
 // Mock CSS module
 jest.mock('../styles/StudentForm.module.css', () => ({
@@ -23,13 +23,69 @@ jest.mock('../styles/StudentForm.module.css', () => ({
   weightGroup: 'weightGroup',
   weightLabel: 'weightLabel',
   weightInput: 'weightInput',
-  submitButton: 'submitButton'
+  submitButton: 'submitButton',
+  goalSection: 'goalSection',
+  goalHeader: 'goalHeader',
+  goalTitle: 'goalTitle',
+  goalHint: 'goalHint',
+  goalSearch: 'goalSearch',
+  goalCounter: 'goalCounter',
+  goalSuggestions: 'goalSuggestions',
+  goalSuggestion: 'goalSuggestion',
+  goalMeta: 'goalMeta',
+  goalPills: 'goalPills',
+  goalPill: 'goalPill',
+  goalPillName: 'goalPillName',
+  goalRemove: 'goalRemove'
 }));
 
 describe('StudentForm', () => {
   const mockOnSubmit = jest.fn();
   const mockOnWeightsChange = jest.fn();
+  const mockOnGoalSchoolsChange = jest.fn();
   const defaultWeights = getDefaultFeatureWeights();
+  const mockSchools: School[] = [
+    {
+      school_id: 1,
+      school_name: 'Stanford University',
+      city: 'Stanford',
+      state: 'CA',
+      avg_sat: 1500,
+      avg_act: 34,
+      graduation_rate: 94,
+      acceptance_rate: 4,
+      student_faculty_ratio: 6,
+      tuition_cost: 62000,
+      avg_aid: 30000,
+      student_population: 17000,
+      international_percentage: 20,
+      latitude: 37.4275,
+      longitude: -122.1697,
+      ranking: 3,
+      type: 'Private',
+      urban_rural: 'Suburban'
+    },
+    {
+      school_id: 2,
+      school_name: 'UCLA',
+      city: 'Los Angeles',
+      state: 'CA',
+      avg_sat: 1410,
+      avg_act: 31,
+      graduation_rate: 91,
+      acceptance_rate: 9,
+      student_faculty_ratio: 18,
+      tuition_cost: 38000,
+      avg_aid: 18000,
+      student_population: 45000,
+      international_percentage: 12,
+      latitude: 34.0689,
+      longitude: -118.4452,
+      ranking: 15,
+      type: 'Public',
+      urban_rural: 'Urban'
+    }
+  ];
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -41,6 +97,9 @@ describe('StudentForm', () => {
         onSubmit={mockOnSubmit}
         featureWeights={defaultWeights}
         onWeightsChange={mockOnWeightsChange}
+        schools={mockSchools}
+        goalSchoolIds={[]}
+        onGoalSchoolsChange={mockOnGoalSchoolsChange}
         {...props}
       />
     );
@@ -72,6 +131,12 @@ describe('StudentForm', () => {
     it('should render the submit button', () => {
       renderForm();
       expect(screen.getByRole('button', { name: /Find Similar Schools/i })).toBeInTheDocument();
+    });
+
+    it('should render the goal schools section', () => {
+      renderForm();
+      expect(screen.getByText('Goal Schools')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/Search by school name, city, or state/i)).toBeInTheDocument();
     });
 
     it('should render feature weights toggle', () => {
@@ -109,6 +174,19 @@ describe('StudentForm', () => {
       // Click to hide
       await userEvent.click(toggle);
       expect(screen.queryByText(/Adjust importance/i)).not.toBeInTheDocument();
+    });
+
+    it('should suggest and add a goal school', async () => {
+      renderForm();
+
+      await userEvent.type(
+        screen.getByPlaceholderText(/Search by school name, city, or state/i),
+        'stan'
+      );
+
+      await userEvent.click(screen.getByRole('button', { name: /Stanford University/i }));
+
+      expect(mockOnGoalSchoolsChange).toHaveBeenCalledWith([1]);
     });
   });
 

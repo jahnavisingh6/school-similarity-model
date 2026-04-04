@@ -153,41 +153,6 @@ tbody tr:hover .valueCell.best {
   background-color: #c6f6d5;
 }
 
-/* Dark mode */
-:global(.dark) .modal {
-  background: #1e1e1e;
-}
-
-:global(.dark) .header {
-  border-color: #333;
-}
-
-:global(.dark) .header h2 {
-  color: #e0e0e0;
-}
-
-:global(.dark) .labelHeader,
-:global(.dark) .schoolHeader {
-  background: #2d2d2d;
-  color: #ccc;
-}
-
-:global(.dark) .labelCell {
-  background: #1e1e1e;
-  color: #ccc;
-  border-color: #333;
-}
-
-:global(.dark) .valueCell {
-  color: #e0e0e0;
-  border-color: #333;
-}
-
-:global(.dark) .valueCell.best {
-  background: #1a4731;
-  color: #9ae6b4;
-}
-
 @media (max-width: 768px) {
   .modal {
     max-width: 100%;

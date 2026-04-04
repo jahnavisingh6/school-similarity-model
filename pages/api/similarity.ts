@@ -3,9 +3,10 @@ import type {
   School,
   SimilarityApiRequest,
   SimilarityApiResponse,
-  ApiError
+  ApiError,
+  GoalMatchResult
 } from '../../types';
-import { getTopSimilarSchools } from '../../utils/similarity';
+import { computeSimilarities } from '../../utils/similarity';
 import { validateStudentProfile, validateFeatureWeights } from '../../utils/validation';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -69,17 +70,39 @@ export default async function handler(
       return res.status(400).json({ error: 'topN must be between 1 and 20' });
     }
 
-    // Load schools and compute similarities
+    const goalSchoolIds = body.goalSchoolIds ?? [];
+    if (!Array.isArray(goalSchoolIds) || goalSchoolIds.some(id => !Number.isInteger(id))) {
+      return res.status(400).json({ error: 'goalSchoolIds must be an array of school IDs' });
+    }
+
+    if (goalSchoolIds.length > 5) {
+      return res.status(400).json({ error: 'You can select up to 5 goal schools' });
+    }
+
+    // Load schools and compute similarities once so top matches and goal matches use the same scale
     const schools = await loadSchools();
-    const results = getTopSimilarSchools(
+    const similarities = computeSimilarities(
       body.profile,
       schools,
-      topN,
       body.weights ?? null
     );
+    const results = similarities.slice(0, topN);
+
+    const similarityBySchoolId = new Map(
+      similarities.map((result, index) => [result.school.school_id, { ...result, rank: index + 1 }])
+    );
+
+    const goalMatches = goalSchoolIds.reduce<GoalMatchResult[]>((matches, id) => {
+      const match = similarityBySchoolId.get(id);
+      if (match) {
+        matches.push(match);
+      }
+      return matches;
+    }, []);
 
     return res.status(200).json({
       results,
+      goalMatches,
       computedAt: new Date().toISOString(),
       count: results.length
     });

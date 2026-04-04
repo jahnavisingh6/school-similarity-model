@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import styles from '../styles/StudentForm.module.css';
-import type { StudentProfile, FeatureWeights, FormData, ValidationErrors, FeatureKey } from '../types';
+import type { StudentProfile, FeatureWeights, FormData, ValidationErrors, FeatureKey, School } from '../types';
 import {
   validateField,
   isValidFormData,
@@ -12,6 +12,9 @@ interface StudentFormProps {
   onSubmit: (profile: StudentProfile) => void;
   featureWeights: FeatureWeights;
   onWeightsChange: (weights: FeatureWeights) => void;
+  schools?: School[];
+  goalSchoolIds?: number[];
+  onGoalSchoolsChange?: (goalSchoolIds: number[]) => void;
   isLoading?: boolean;
 }
 
@@ -36,14 +39,34 @@ export default function StudentForm({
   onSubmit,
   featureWeights,
   onWeightsChange,
+  schools = [],
+  goalSchoolIds = [],
+  onGoalSchoolsChange,
   isLoading = false
 }: StudentFormProps) {
   const [formData, setFormData] = useState<FormData>(getEmptyFormData());
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showWeights, setShowWeights] = useState(false);
+  const [goalQuery, setGoalQuery] = useState('');
 
   const isFormValid = useMemo(() => isValidFormData(formData), [formData]);
+  const selectedGoalSchools = useMemo(
+    () => schools.filter(school => goalSchoolIds.includes(school.school_id)),
+    [goalSchoolIds, schools]
+  );
+  const goalSuggestions = useMemo(() => {
+    const query = goalQuery.trim().toLowerCase();
+    if (query.length < 2) return [];
+
+    return schools
+      .filter(school => !goalSchoolIds.includes(school.school_id))
+      .filter(school => {
+        const haystack = `${school.school_name} ${school.city ?? ''} ${school.state ?? ''}`.toLowerCase();
+        return haystack.includes(query);
+      })
+      .slice(0, 6);
+  }, [goalQuery, goalSchoolIds, schools]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -129,6 +152,20 @@ export default function StudentForm({
     onWeightsChange(newWeights);
   }, [featureWeights, onWeightsChange]);
 
+  const handleAddGoalSchool = useCallback((schoolId: number) => {
+    if (!onGoalSchoolsChange || goalSchoolIds.includes(schoolId) || goalSchoolIds.length >= 5) {
+      return;
+    }
+
+    onGoalSchoolsChange([...goalSchoolIds, schoolId]);
+    setGoalQuery('');
+  }, [goalSchoolIds, onGoalSchoolsChange]);
+
+  const handleRemoveGoalSchool = useCallback((schoolId: number) => {
+    if (!onGoalSchoolsChange) return;
+    onGoalSchoolsChange(goalSchoolIds.filter(id => id !== schoolId));
+  }, [goalSchoolIds, onGoalSchoolsChange]);
+
   const getInputClassName = (key: FeatureKey): string => {
     const hasError = touched[key] && errors[key];
     return `${styles.input} ${hasError ? styles.inputError : ''}`;
@@ -172,6 +209,68 @@ export default function StudentForm({
               )}
             </div>
           ))}
+        </div>
+
+        <div className={styles.goalSection}>
+          <div className={styles.goalHeader}>
+            <h3 className={styles.goalTitle}>Goal Schools</h3>
+            <span className={styles.goalHint}>Add up to 5 dream or target universities</span>
+          </div>
+
+          <div className={styles.goalSearch}>
+            <input
+              type="text"
+              value={goalQuery}
+              onChange={(e) => setGoalQuery(e.target.value)}
+              className={styles.input}
+              placeholder="Search by school name, city, or state"
+              disabled={isLoading || schools.length === 0 || goalSchoolIds.length >= 5}
+            />
+            <span className={styles.goalCounter}>{goalSchoolIds.length}/5 selected</span>
+          </div>
+
+          {goalSuggestions.length > 0 && (
+            <div className={styles.goalSuggestions}>
+              {goalSuggestions.map(school => (
+                <button
+                  key={school.school_id}
+                  type="button"
+                  className={styles.goalSuggestion}
+                  onClick={() => handleAddGoalSchool(school.school_id)}
+                  disabled={isLoading}
+                >
+                  <span>{school.school_name}</span>
+                  <span className={styles.goalMeta}>
+                    {[school.city, school.state].filter(Boolean).join(', ') || school.type}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {selectedGoalSchools.length > 0 && (
+            <div className={styles.goalPills}>
+              {selectedGoalSchools.map(school => (
+                <div key={school.school_id} className={styles.goalPill}>
+                  <div>
+                    <div className={styles.goalPillName}>{school.school_name}</div>
+                    <div className={styles.goalMeta}>
+                      {[school.city, school.state].filter(Boolean).join(', ') || school.type}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.goalRemove}
+                    onClick={() => handleRemoveGoalSchool(school.school_id)}
+                    disabled={isLoading}
+                    aria-label={`Remove ${school.school_name}`}
+                  >
+                    x
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className={styles.weightsSection}>

@@ -5,10 +5,10 @@ import TopSchools from '../components/TopSchools';
 import Chatbot from '../components/Chatbot';
 import Filters, { FilterState, DEFAULT_FILTERS, applyFilters } from '../components/Filters';
 import CompareSchools from '../components/CompareSchools';
-import ThemeToggle from '../components/ThemeToggle';
+import GoalMatches from '../components/GoalMatches';
 import { computeSimilarity, ApiRequestError } from '../utils/api';
 import { getDefaultFeatureWeights } from '../utils/validation';
-import type { StudentProfile, FeatureWeights, SimilarityResult, School } from '../types';
+import type { StudentProfile, FeatureWeights, SimilarityResult, GoalMatchResult, School } from '../types';
 import styles from '../styles/Home.module.css';
 
 export default function Home() {
@@ -20,6 +20,8 @@ export default function Home() {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [compareList, setCompareList] = useState<number[]>([]);
   const [showCompare, setShowCompare] = useState(false);
+  const [goalSchoolIds, setGoalSchoolIds] = useState<number[]>([]);
+  const [goalMatches, setGoalMatches] = useState<GoalMatchResult[]>([]);
 
   // Load schools for filters
   useEffect(() => {
@@ -52,8 +54,9 @@ export default function Home() {
     setError(null);
 
     try {
-      const response = await computeSimilarity(studentProfile, featureWeights, 20);
+      const response = await computeSimilarity(studentProfile, featureWeights, 20, goalSchoolIds);
       setResults(response.results);
+      setGoalMatches(response.goalMatches ?? []);
     } catch (err) {
       console.error('Error computing similarities:', err);
       if (err instanceof ApiRequestError) {
@@ -62,10 +65,11 @@ export default function Home() {
         setError('An unexpected error occurred. Please try again.');
       }
       setResults([]);
+      setGoalMatches([]);
     } finally {
       setLoading(false);
     }
-  }, [featureWeights]);
+  }, [featureWeights, goalSchoolIds]);
 
   const handleCompareToggle = useCallback((schoolId: number) => {
     setCompareList(prev => {
@@ -96,8 +100,6 @@ export default function Home() {
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </Head>
 
-      <ThemeToggle />
-
       <main className={styles.main}>
         <h1 className={styles.title}>School Recommendation System</h1>
         <p className={styles.description}>
@@ -110,6 +112,9 @@ export default function Home() {
               onSubmit={handleSubmit}
               featureWeights={featureWeights}
               onWeightsChange={setFeatureWeights}
+              schools={allSchools}
+              goalSchoolIds={goalSchoolIds}
+              onGoalSchoolsChange={setGoalSchoolIds}
               isLoading={loading}
             />
           </div>
@@ -123,6 +128,10 @@ export default function Home() {
 
             {results.length > 0 && (
               <>
+                {goalMatches.length > 0 && (
+                  <GoalMatches matches={goalMatches} />
+                )}
+
                 <div className={styles.resultsHeader}>
                   <Filters
                     schools={allSchools}

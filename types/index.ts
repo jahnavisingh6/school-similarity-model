@@ -60,6 +60,10 @@ export interface SimilarityResult {
   score: number;
 }
 
+export interface GoalMatchResult extends SimilarityResult {
+  rank?: number;
+}
+
 // Statistics for a feature column
 export interface FeatureStats {
   mean: number;
@@ -110,10 +114,12 @@ export interface SimilarityApiRequest {
   profile: StudentProfile;
   weights?: FeatureWeights;
   topN?: number;
+  goalSchoolIds?: number[];
 }
 
 export interface SimilarityApiResponse {
   results: SimilarityResult[];
+  goalMatches?: GoalMatchResult[];
   computedAt: string;
   count: number;
 }
