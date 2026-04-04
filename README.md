@@ -5,11 +5,20 @@ A **Next.js + TypeScript** web app that recommends **similar US colleges** based
 ## What you can do
 - **Enter a target profile** (SAT/ACT, tuition, graduation rate, acceptance rate, etc.)
 - **Adjust feature weights** (0–10) to emphasize what matters to you
+- **Pick up to 5 goal schools** and see how closely your profile matches each one
 - **Get top matches** with a similarity “% match” score
+- **See goal-school fit scores** with each selected school's overall similarity rank
 - **Filter results** (state, school type, tuition range, SAT range)
 - **Compare schools** side-by-side (up to 4)
 - **Save favorites** in-browser (localStorage)
 - **Use an in-app chatbot** that asks questions and finds matches
+
+## Recent updates
+- Added a **Goal Schools** search-and-select flow in the student profile form
+- Added a **Goal Matches** panel that highlights selected schools after each similarity run
+- Expanded the similarity API to accept `goalSchoolIds` and return `goalMatches`
+- Refined the student form tests and API coverage for the new goal-matching workflow
+- Removed the older theme toggle utilities and related styles/tests
 
 ## Tech stack
 - **Frontend**: Next.js / React / TypeScript
@@ -36,6 +45,7 @@ pages/
     schools.ts           # GET /api/schools
 components/
   StudentForm.tsx        # profile input + weights
+  GoalMatches.tsx        # selected goal schools + fit scores
   TopSchools.tsx         # results cards
   Filters.tsx            # result filtering
   CompareSchools.tsx     # side-by-side comparison modal
@@ -64,7 +74,7 @@ Then open `http://localhost:3000`.
 
 ## API
 - **GET** `/api/schools` → returns all schools and a count
-- **POST** `/api/similarity` → compute top matches
+- **POST** `/api/similarity` → compute top matches and optional goal-school fit scores
 
 Request body example:
 
@@ -98,9 +108,43 @@ Request body example:
     "longitude": 1,
     "ranking": 1
   },
-  "topN": 5
+  "topN": 5,
+  "goalSchoolIds": [110635, 166683, 215293]
 }
 ```
+
+Response shape:
+
+```json
+{
+  "results": [
+    {
+      "school": {
+        "school_id": 123,
+        "school_name": "Example University"
+      },
+      "score": 0.91
+    }
+  ],
+  "goalMatches": [
+    {
+      "school": {
+        "school_id": 110635,
+        "school_name": "Goal School Example"
+      },
+      "score": 0.87,
+      "rank": 14
+    }
+  ],
+  "computedAt": "2026-04-04T00:00:00.000Z",
+  "count": 5
+}
+```
+
+Notes:
+- `goalSchoolIds` is optional and limited to **5** school IDs.
+- `goalMatches` uses the same similarity run as `results`, so both views stay on the same scoring scale.
+- `topN` must be between **1** and **20**.
 
 ## Tests
 ```bash
