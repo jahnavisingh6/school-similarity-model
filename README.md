@@ -1,82 +1,146 @@
 # School Recommendation System (Similarity Matching)
 
-A **Next.js + TypeScript** web app that recommends **similar US colleges** based on a target “profile” (scores, cost, outcomes, location, etc.). It computes **weighted cosine similarity** on **Z-score standardized** feature vectors using a dataset of **1,128 schools** (`public/data/schools.json`).
+A Next.js + TypeScript web app for finding similar US colleges from a target student or school profile. The app uses weighted cosine similarity on Z-score standardized features and returns ranked matches from a dataset of 1,128 schools in `public/data/schools.json`.
 
-## What you can do
-- **Enter a target profile** (SAT/ACT, tuition, graduation rate, acceptance rate, etc.)
-- **Adjust feature weights** (0–10) to emphasize what matters to you
-- **Pick up to 5 goal schools** and see how closely your profile matches each one
-- **Get top matches** with a similarity “% match” score
-- **See goal-school fit scores** with each selected school's overall similarity rank
-- **Filter results** (state, school type, tuition range, SAT range)
-- **Compare schools** side-by-side (up to 4)
-- **Save favorites** in-browser (localStorage)
-- **Use an in-app chatbot** that asks questions and finds matches
+Live app: https://school-similarity-model.vercel.app
 
-## Recent updates
-- Added a **Goal Schools** search-and-select flow in the student profile form
-- Added a **Goal Matches** panel that highlights selected schools after each similarity run
-- Expanded the similarity API to accept `goalSchoolIds` and return `goalMatches`
-- Refined the student form tests and API coverage for the new goal-matching workflow
-- Removed the older theme toggle utilities and related styles/tests
+## Overview
 
-## Tech stack
-- **Frontend**: Next.js / React / TypeScript
-- **Backend**: Next.js API routes (`/api/*`)
-- **Testing**: Jest + Testing Library
+This project helps users explore colleges by similarity instead of by a single cutoff or admissions prediction. A user can enter a target profile, tune feature importance, and get the closest matching schools based on academic, financial, and institutional attributes.
 
-## How similarity is computed (the “model”)
-Implemented in `utils/similarity.ts` and used by both the API and the chatbot:
+The current web app includes:
 
-1. **Select numeric features** (12 fields):  
-   `avg_sat, avg_act, graduation_rate, acceptance_rate, student_faculty_ratio, tuition_cost, avg_aid, student_population, international_percentage, latitude, longitude, ranking`
-2. **Compute mean/std** for each feature across all schools.
-3. **Standardize** values using Z-score: $z = (x - \mu) / \sigma$
-4. **Apply weights** (optional): multiply each standardized feature by its weight.
-5. **Compute cosine similarity** between the student vector and each school vector.
-6. **Sort descending** and return top N.
+- Student profile entry for SAT, ACT, tuition, aid, graduation rate, ranking, and other core metrics
+- Adjustable feature weights from 0 to 10
+- Goal school selection for up to 5 schools
+- Goal match scoring that shows how close the input profile is to each selected school
+- Ranked top-match results
+- Client-side filtering by state, school type, tuition, and SAT range
+- Side-by-side comparison for up to 4 schools
+- Favorites saved in browser local storage
+- A guided chatbot that can help users find matching schools
 
-## Project structure (high level)
-```
+## How The Model Works
+
+The similarity logic lives in `utils/similarity.ts`.
+
+The model uses these 12 numeric features:
+
+- `avg_sat`
+- `avg_act`
+- `graduation_rate`
+- `acceptance_rate`
+- `student_faculty_ratio`
+- `tuition_cost`
+- `avg_aid`
+- `student_population`
+- `international_percentage`
+- `latitude`
+- `longitude`
+- `ranking`
+
+Computation flow:
+
+1. Compute feature-level mean and standard deviation across all schools.
+2. Convert each school feature and each input profile feature into Z-scores.
+3. Apply optional user-selected weights to each standardized feature.
+4. Compute cosine similarity between the input vector and every school vector.
+5. Sort results in descending order and return the top matches.
+
+This is a similarity and discovery tool, not an admissions probability model.
+
+## Current Product Flow
+
+The main page is implemented in `pages/index.tsx`.
+
+Typical user flow:
+
+1. Enter a target profile in the student form.
+2. Adjust feature weights if some attributes matter more.
+3. Optionally choose up to 5 goal schools.
+4. Submit the form to run similarity scoring.
+5. Review top matches and goal-school fit scores.
+6. Filter, compare, and save schools.
+
+The goal-school workflow is supported by the API in `pages/api/similarity.ts`, which accepts `goalSchoolIds` and returns `goalMatches` ranked on the same scoring scale as the main result list.
+
+## Tech Stack
+
+- Next.js 14
+- React 18
+- TypeScript
+- Jest + Testing Library
+- Vercel-ready deployment config in `vercel.json`
+
+## Project Structure
+
+```text
 pages/
-  index.tsx              # main UI
+  index.tsx              Main UI
   api/
-    similarity.ts        # POST /api/similarity
-    schools.ts           # GET /api/schools
+    schools.ts           GET /api/schools
+    similarity.ts        POST /api/similarity
 components/
-  StudentForm.tsx        # profile input + weights
-  GoalMatches.tsx        # selected goal schools + fit scores
-  TopSchools.tsx         # results cards
-  Filters.tsx            # result filtering
-  CompareSchools.tsx     # side-by-side comparison modal
-  Chatbot.tsx            # guided Q&A (client-side similarity)
-  FavoriteButton.tsx     # local favorites
+  StudentForm.tsx        Profile input + weights + goal schools
+  GoalMatches.tsx        Goal school scores and ranks
+  TopSchools.tsx         Ranked result cards
+  Filters.tsx            Result filtering controls
+  CompareSchools.tsx     Side-by-side comparison modal
+  Chatbot.tsx            Guided school finder
+  FavoriteButton.tsx     Local favorites toggle
 utils/
-  similarity.ts          # Z-score + weighted cosine similarity
-  api.ts                 # frontend helpers for calling API routes
+  similarity.ts          Similarity engine
+  api.ts                 Frontend API helpers
+  validation.ts          Request and form validation
 public/data/
-  schools.json           # dataset (1,128 schools)
+  schools.json           Processed school dataset
 scripts/
-  process_scorecard.py   # build schools.json from College Scorecard CSV
+  process_scorecard.py   CSV-to-JSON data pipeline
 notebooks/
-  Modeling.ipynb         # optional experiments (not required to run the app)
+  Modeling.ipynb         Exploratory analysis
 ```
 
-## Run locally
-Prereqs: Node.js 18+ recommended.
+## Getting Started
+
+Prerequisite: Node.js 18 or newer.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Then open `http://localhost:3000`.
+Open `http://localhost:3000`.
+
+Useful scripts from `package.json`:
+
+```bash
+npm run dev
+npm run build
+npm run start
+npm test
+npm run test:coverage
+```
 
 ## API
-- **GET** `/api/schools` → returns all schools and a count
-- **POST** `/api/similarity` → compute top matches and optional goal-school fit scores
 
-Request body example:
+### `GET /api/schools`
+
+Returns the full school dataset and total count.
+
+Example response:
+
+```json
+{
+  "schools": [],
+  "count": 1128
+}
+```
+
+### `POST /api/similarity`
+
+Computes similarity results for a profile and optionally scores selected goal schools.
+
+Example request:
 
 ```json
 {
@@ -113,7 +177,7 @@ Request body example:
 }
 ```
 
-Response shape:
+Example response:
 
 ```json
 {
@@ -136,29 +200,44 @@ Response shape:
       "rank": 14
     }
   ],
-  "computedAt": "2026-04-04T00:00:00.000Z",
+  "computedAt": "2026-04-14T00:00:00.000Z",
   "count": 5
 }
 ```
 
-Notes:
-- `goalSchoolIds` is optional and limited to **5** school IDs.
-- `goalMatches` uses the same similarity run as `results`, so both views stay on the same scoring scale.
-- `topN` must be between **1** and **20**.
+Request rules enforced by the API:
 
-## Tests
+- `profile` is required
+- `topN` must be between `1` and `20`
+- `goalSchoolIds` is optional
+- `goalSchoolIds` must be an array of integers
+- At most 5 goal schools can be selected
+
+## Testing
+
+This repo includes component tests and utility tests.
+
 ```bash
 npm test
 ```
 
-## Data pipeline (optional)
-`scripts/process_scorecard.py` converts a College Scorecard CSV into the JSON format the app uses:
+Current local verification status:
+
+- `npm test` passes
+- `npm run build` passes
+
+## Data Pipeline
+
+The script `scripts/process_scorecard.py` converts a College Scorecard CSV into the JSON format used by the app.
 
 ```bash
 python3 scripts/process_scorecard.py path/to/scorecard.csv public/data/schools.json
 ```
 
-## Notes / limitations
-- Recommendations are **similarity-based**, not an admissions prediction model.
-- Some fields can be missing in raw data; the pipeline fills defaults for stable UX.
-- `notebooks/Modeling.ipynb` is exploratory and not required to run the web app.
+## Notes And Limitations
+
+- This is a matching tool, not an admissions prediction or ranking engine.
+- Data quality depends on the source dataset and preprocessing choices.
+- Missing values are normalized to keep the UX stable, which can reduce precision for some schools.
+- Geographic similarity uses latitude and longitude when available.
+- The exploratory notebook is not required to run the app.
